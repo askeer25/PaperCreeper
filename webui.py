@@ -153,13 +153,15 @@ def show_results_page():
         st.markdown(f"一共检索得到了{num_papers}篇相关论文。")
 
         # 创建表格标题
-        table_header = "| 标题 | 年份 | 作者 | 相关度评分 |\n| --- | --- | --- | --- |"
+        table_header = "| 序号 | 标题 | 年份 | 作者 | 相关度评分 | ArXiv链接 |\n| --- | --- | --- | --- | --- | --- |"
         table_rows = []
 
         # 为每篇论文创建表格行
-        for result, score in zip(st.session_state.results, st.session_state.scores):
+        for i, (result, score) in enumerate(
+            zip(st.session_state.results, st.session_state.scores), 1
+        ):
             authors = ", ".join([author.name for author in result.authors])
-            row = f"| {result.title} | {result.published.year} | {authors} | {score:.1f}/10 |"
+            row = f"| {i} | {result.title} | {result.published.year} | {authors} | {score:.1f}/10 | [链接]({result.entry_id}) |"
             table_rows.append(row)
 
         # 组合表格
