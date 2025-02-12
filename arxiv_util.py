@@ -1,6 +1,7 @@
 import arxiv
 from datetime import datetime
 from typing import List, Optional
+import asyncio
 
 
 def get_arxiv_results(
@@ -70,16 +71,37 @@ def get_arxiv_results(
         return []
 
 
-def get_arxiv_message(result):
-    summary = result.summary.replace("\n", " ")
-    authors = ", ".join([author.name for author in result.authors])
-    published = result.published.year
-    message = (
-        f"**Title:** {result.title}\n"
-        f"**Authors:** {authors}\n"
-        f"**Published:** {published}\n"
-        f"**Summary:** {summary}\n"
-        f"**URL:** {result.entry_id}"
+async def async_get_arxiv_results(
+    query: str,
+    max_results: int,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    categories: Optional[List[str]] = None,
+    abstract: bool = False,
+) -> list:
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,
+        get_arxiv_results,
+        query,
+        max_results,
+        start_date,
+        end_date,
+        categories,
+        abstract,
     )
-    # print(message)
-    return message
+
+
+async def main():
+    results = await async_get_arxiv_results(
+        query="machine learning",
+        max_results=10,
+        categories=["cs.AI", "cs.LG"],
+        abstract=True,
+    )
+    for result in results:
+        print(result.entry_id, result.title)
+
+
+# 运行异步函数
+asyncio.run(main())
