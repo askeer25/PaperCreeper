@@ -147,56 +147,49 @@ def show_results_page(agent: ResearchAgent):
                 star_count = min(5, max(1, round((score / 10) * 5)))
                 stars = "⭐" * star_count
 
-                # 改进列布局
-                col1, col2, col3 = st.columns([2, 2, 1])
-                with col1:
-                    st.markdown(f"**相关度:** {stars}")
-                    st.markdown(f"**发布日期:** {paper.published.strftime('%Y-%m-%d')}")
-                with col2:
-                    authors = [author.name for author in paper.authors]
-                    st.markdown(
-                        f"**作者:** {', '.join(authors[:3])}{'...' if len(authors) > 3 else ''}"
-                    )
-                with col3:
-                    # 操作按钮垂直排列
-                    st.button(
-                        "🤖 AI总结",
-                        key=f"summary_button_{i}",
-                        type="primary",
-                        use_container_width=True,
-                        on_click=lambda paper=paper, i=i: generate_summary(
-                            agent, paper, i
-                        ),
-                    )
+                st.markdown(f"**相关度:** {stars}")
+                st.markdown(f"**发布日期:** {paper.published.strftime('%Y-%m-%d')}")
+                authors = [author.name for author in paper.authors]
+                st.markdown(
+                    f"**作者:** {', '.join(authors[:3])}{'...' if len(authors) > 3 else ''}"
+                )
 
-                    st.markdown(
-                        f"""
-                        <a href="{paper.entry_id}" target="_blank" 
-                           style="text-decoration: none; 
-                                  background-color: #3498DB; 
-                                  color: white; 
-                                  padding: 8px 15px; 
-                                  border-radius: 5px; 
-                                  width: 100%;
-                                  text-align: center;
-                                  display: inline-block;
-                                  margin-top: 5px;">
-                            📎 查看原文
-                        </a>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                st.markdown(
+                    f"""
+                    <a href="{paper.entry_id}" target="_blank" 
+                    style="text-decoration: none; 
+                            background-color: #3498DB; 
+                            color: white; 
+                            padding: 8px 15px; 
+                            border-radius: 5px; 
+                            width: 100%;
+                            text-align: center;
+                            display: inline-block;
+                            margin-top: 5px;">
+                        📎 查看原文
+                    </a>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
-                # 改进摘要显示
-                with st.expander("📄 查看摘要", expanded=False):
-                    st.markdown(f"{paper.summary}")
+                st.button(
+                    "🤖 AI总结",
+                    key=f"summary_button_{i}",
+                    type="primary",
+                    use_container_width=True,
+                    on_click=lambda paper=paper, i=i: generate_summary(agent, paper, i),
+                )
 
-                # 显示AI总结（如果有）
-                if i in st.session_state.paper_summaries:
-                    with st.expander("🤖 AI智能解读", expanded=True):
-                        st.markdown(st.session_state.paper_summaries[i])
+            # 改进摘要显示
+            with st.expander("📄 查看摘要", expanded=False):
+                st.markdown(f"{paper.summary}")
 
-                st.markdown("</div>", unsafe_allow_html=True)
+            # 显示AI总结（如果有）
+            if i in st.session_state.paper_summaries:
+                with st.expander("🤖 查看总结", expanded=True):
+                    st.markdown(st.session_state.paper_summaries[i])
+
+            st.markdown("</div>", unsafe_allow_html=True)
 
         # 底部控制区
         st.markdown("<br>", unsafe_allow_html=True)
@@ -222,18 +215,7 @@ def show_results_page(agent: ResearchAgent):
 
         # 显示整体总结
         if st.session_state.summary:
-            st.markdown(
-                """
-                <div style='background-color: #F7F9FA; 
-                          padding: 20px; 
-                          border-radius: 10px; 
-                          margin-top: 20px;
-                          border-left: 5px solid #3498DB;'>
-                """,
-                unsafe_allow_html=True,
-            )
             st.markdown(st.session_state.summary)
-            st.markdown("</div>", unsafe_allow_html=True)
 
 
 def generate_summary(agent: ResearchAgent, paper, index: int):
@@ -250,7 +232,7 @@ async def main():
 
     try:
         # Initialize LLM client and ResearchAgent
-        llm = LLM_client("openai/gpt-4o-2024-11-20")
+        llm = LLM_client("gpt-4o-ca")
         agent = ResearchAgent(llm)
 
         # Initialize session state
