@@ -47,7 +47,7 @@ class LLM_client:
                 model=kwargs.get("model", self.model),
                 messages=messages,
                 n=kwargs.get("n", 1),
-                temperature=kwargs.get("temperature", 0.7),
+                temperature=kwargs.get("temperature", 0.4),
                 max_tokens=kwargs.get("max_tokens", 4000),
                 timeout=kwargs.get("timeout", 180),
             )
@@ -64,7 +64,7 @@ class LLM_client:
                 model=kwargs.get("model", self.model),
                 messages=messages,
                 n=kwargs.get("n", 1),
-                temperature=kwargs.get("temperature", 0.7),
+                temperature=kwargs.get("temperature", 0.4),
                 max_tokens=kwargs.get("max_tokens", 4000),
                 timeout=kwargs.get("timeout", 180),
             )

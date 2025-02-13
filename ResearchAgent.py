@@ -71,7 +71,7 @@ Generate a list of search queries:
    - 确定该领域的发展趋势和未来方向。
    - 突出潜在的研究空白和机遇。
 
-在论文中涉及到引用论文时，请使用标准的IEEE引用格式，例如: "It is not too surprising, since cognitive science research has shown that creative ideas often result from the cohesive association of two seemingly unrelated pieces of knowledge (Koestler, 1964; Benedek et al., 2012; Lee & Chung, 2024).".
+在论文中提到某一篇论文时，请使用标准的IEEE引用格式。
 
 您的分析应简洁明了，使用专业术语以确保客观和全面，同时强调重点发现。摘要应限制在600字以内。
 
@@ -97,7 +97,7 @@ Generate a list of search queries:
             {"role": "system", "content": "You are an academic search assistant."},
             {"role": "user", "content": self.KEYWORD_PROMPT.format(query=user_input)},
         ]
-        response = self.llm.response(messages, temperature=0.5)
+        response = self.llm.response(messages, temperature=0.4)
         try:
             queries = extract(response, "queries")
             return json.loads(queries)
@@ -118,19 +118,27 @@ Generate a list of search queries:
                     ),
                 },
             ]
-            score = float(await self.llm.async_response(messages, temperature=0.3))
+            score = float(await self.llm.async_response(messages, temperature=0.4))
             return (score, result)
 
-        # Use asyncio.gather for concurrent async scoring
         tasks = [score_paper(result) for result in results]
         scores = await asyncio.gather(*tasks)
         scores = [score for score in scores if score[0] is not None]
 
-        # Sort results by relevance score and keep top 50%
         num_to_keep = int(len(results) * 0.50)
         scores.sort(key=lambda x: x[0], reverse=True)
         sorted_results = [result for _, result in scores[:num_to_keep]]
         sorted_scores = [score for score, _ in scores[:num_to_keep]]
+        unique_titles = set()
+        deduped_results = []
+        deduped_scores = []
+        for score, result in zip(sorted_scores, sorted_results):
+            if result.title not in unique_titles:
+                unique_titles.add(result.title)
+                deduped_results.append(result)
+                deduped_scores.append(score)
+        sorted_results = deduped_results
+        sorted_scores = deduped_scores
         return sorted_results, sorted_scores
 
     async def _search_arxiv(self, user_input: str, max_results: int = 1):
@@ -176,7 +184,7 @@ Generate a list of search queries:
                 ),
             },
         ]
-        return self.llm.response(messages, temperature=0.7)
+        return self.llm.response(messages, temperature=0.4)
 
     def _summarize_papers(self, papers: List[str], scores: List[str]) -> str:
         logging.info("生成论文总结.")
@@ -190,7 +198,7 @@ Generate a list of search queries:
                 "content": self.SUMMARY_PROMPT.format(papers=papers, scores=scores),
             },
         ]
-        return self.llm.response(messages, temperature=0.7)
+        return self.llm.response(messages, temperature=0.4)
 
 
 async def main():
