@@ -22,6 +22,8 @@ st.markdown(
 
 def init_session_state():
     """初始化会话状态"""
+    if "query" not in st.session_state:
+        st.session_state.query = ""
     if "papers" not in st.session_state:
         st.session_state.papers = []
     if "scores" not in st.session_state:
@@ -59,28 +61,36 @@ async def show_search_page(agent: ResearchAgent):
             unsafe_allow_html=True,
         )
 
+        # Create a clean input area with subtle styling
         query = st.text_area(
-            label="请输入您想要查询的主题",
-            height=100,
+            label="",  # Remove label as we already have a header
+            height=120,
             placeholder="例如：最新的深度学习研究进展...",
+            value=st.session_state.query,
         )
 
-    # Add styled suggestions
-    # st.markdown(
-    #     """
-    #     <div style='background-color: #F8F9F9; padding: 20px; border-radius: 10px;'>
-    #     <h4 style='color: #566573;'>💡 建议的提问方式</h4>
-    #     <ul style='color: #626567;'>
-    #         <li>查找一篇人工智能领域的论文</li>
-    #         <li>了解一下深度学习的最新进展</li>
-    #         <li>有关自然语言处理的研究</li>
-    #     </ul>
-    #     </div>
-    # """,
-    #     unsafe_allow_html=True,
-    # )
+        # Add some spacing
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    # Add some spacing
+        # Display suggestion tags in a more organized way
+        st.markdown("#### 💡 热门话题")
+
+        tags = [
+            "最新的大语言模型推理算法研究",
+            "多智能体强化学习在无人机控制中的应用",
+            "大语言模型实现数学推理的研究",
+        ]
+
+        # Create a horizontal layout for tags
+        cols = st.columns(3)
+        for idx, tag in enumerate(tags):
+            with cols[idx]:
+                if st.button(
+                    tag, key=f"tag_{tag}", type="secondary", use_container_width=True
+                ):
+                    st.session_state.query = tag
+                    st.rerun()
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Create a centered search button with custom styling
@@ -120,7 +130,6 @@ def show_results_page(agent: ResearchAgent):
         unsafe_allow_html=True,
     )
 
-    # 初始化paper_summaries（如果不存在）
     if "paper_summaries" not in st.session_state:
         st.session_state.paper_summaries = {}
 

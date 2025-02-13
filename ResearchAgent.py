@@ -17,63 +17,65 @@ class ResearchAgent:
     def __init__(self, llm_client: LLM_client):
         self.llm = llm_client
 
-        self.KEYWORD_PROMPT = """您是学术搜索助手，您的任务是生成查询以在arxiv上检索相关论文。如果用户输入中文，请首先将其翻译成英文，并确保翻译的专业性和准确性。用户通常提出一个基础问题，想要进一步了解，但问题的表达形式可能并不理想。
+        self.KEYWORD_PROMPT = """You are an academic search assistant tasked with generating queries to search for relevant papers on arXiv.
+If the user inputs in Chinese, first translate it into English and ensure the translation is professional and accurate.
+The user typically poses a basic question wanting to know more, but the question may not always be clearly articulated.
 
-用户输入：{query}
+Given user's input: {query}
 
+Generate a list of search queries:
 <queries>["query_1", "query_2", ...]</queries>
 
 """
-        self.SUMMARY_PAPER_PROMPT = """请作为学术研究助手对以下论文提供详细总结与分析。
+        self.SUMMARY_PAPER_PROMPT = """请提供一份详细的论文总结与分析, 使用中文回答：
 
-论文标题: {paper}  
-论文摘要: {abstract}
+**论文标题**: {paper}  
+**论文摘要**: {abstract}
 
 您的总结应包括以下几个方面：
 
-1. **主要研究方向与贡献**  
-   - 描述论文的核心研究领域、目标及主要贡献。  
-   - 作者试图解决什么问题？  
+1. **主要研究方向与贡献**
+   - 描述论文的核心研究领域、目标及主要贡献。
+   - 作者试图解决什么问题？
    - 采用了哪些方法来解决问题？
 
-2. **创新点与关键发现**  
-   - 突出论文中的新颖方法、技术或研究成果。  
-   - 这些新内容如何使论文区别于其他相关研究？  
+2. **创新点与关键发现**
+   - 突出论文中的新颖方法、技术或研究成果。
+   - 这些新内容如何使论文区别于其他相关研究？
    - 其方法或结果有何独特之处？
 
-请使用**Markdown**语法作答，仅使用列表、文本、加粗字体，避免使用其他格式。  
+请使用**Markdown**语法作答，仅使用列表、文本、加粗字体，避免使用其他格式。 
 请确保您的回答专业准确，字数不超过300字。
 
 """
 
-        self.SUMMARY_PROMPT = """您是一位专业的学术研究助手，请根据提供的相关性评分，对这组论文进行全面的分析和总结。
+        self.SUMMARY_PROMPT = """作为专业的学术研究助理，您的任务是根据提供的相关分数对一组论文进行全面分析和总结。
 
-论文集合: {papers}  
-相关性评分：{scores}
+您需要在分析中涉及以下方面：
 
-请从以下几个方面进行整体分析：
+1. 研究主题概述
+   - 总结一组{papers}涵盖的主要研究领域和核心主题。
+   - 分析研究主题的分布和重点。
 
-1. **研究主题概览**  
-   - 概括这组论文涉及的主要研究领域和核心主题。  
-   - 分析研究主题的分布和侧重点。
+2. 研究方法和技术手段
+   - 总结{papers}中采用的主要研究方法。
+   - 比较使用的技术方法。
+   - 分析研究方法的发展趋势。
 
-2. **研究方法与技术路线**  
-   - 总结这组论文采用的主要研究方法。  
-   - 比较不同论文间的技术路线异同。  
-   - 分析方法论的演进趋势。
+3. 主要发现和贡献
+   - 提取最重要的研究发现和突破。
+   - 评估每一项发现的创新性和影响力。
 
-3. **关键发现与贡献**  
-   - 提炼最重要的研究发现和突破。  
-   - 评估各项发现的创新性和影响力。  
-   - 根据相关性评分分析研究成果的重要程度。
+4. 研究连续性和趋势
+   - 分析{papers}之间的相互关联和演变路径。
+   - 确定该领域的发展趋势和未来方向。
+   - 突出潜在的研究空白和机遇。
 
-4. **研究脉络与趋势**  
-   - 分析论文之间的承接关系和演进路径。  
-   - 识别该领域的发展趋势和未来方向。  
-   - 指出潜在的研究空白和机会。
+在论文中涉及到引用论文时，请使用标准的IEEE引用格式，例如: "It is not too surprising, since cognitive science research has shown that creative ideas often result from the cohesive association of two seemingly unrelated pieces of knowledge (Koestler, 1964; Benedek et al., 2012; Lee & Chung, 2024).".
 
-请使用简洁专业的语言，确保分析客观全面，突出重点发现。  
-总结长度控制在600字以内。
+您的分析应简洁明了，使用专业术语以确保客观和全面，同时强调重点发现。摘要应限制在600字以内。
+
+确保您的分析提供对研究论文的全面理解，详细涵盖指定的各个方面。
 
     """
 
