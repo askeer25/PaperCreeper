@@ -20,14 +20,18 @@ st.markdown(
 )
 
 
-def init_session_state():
+def init_session_state(agent: ResearchAgent):
     """初始化会话状态"""
     if "query" not in st.session_state:
         st.session_state.query = ""
+    if "tags" not in st.session_state:
+        st.session_state.tags = agent.generate_tags()
     if "papers" not in st.session_state:
         st.session_state.papers = []
     if "scores" not in st.session_state:
         st.session_state.scores = []
+    if "paper_summaries" not in st.session_state:
+        st.session_state.paper_summaries = {}
     if "summary" not in st.session_state:
         st.session_state.summary = ""
     if "processing" not in st.session_state:
@@ -48,11 +52,7 @@ async def show_search_page(agent: ResearchAgent):
         """,
         unsafe_allow_html=True,
     )
-
-    # Add a subtle divider
     st.markdown("---")
-
-    # Create a clean container for the search input
     with st.container():
         st.markdown(
             """
@@ -60,30 +60,17 @@ async def show_search_page(agent: ResearchAgent):
             """,
             unsafe_allow_html=True,
         )
-
-        # Create a clean input area with subtle styling
         query = st.text_area(
-            label="",  # Remove label as we already have a header
+            label="请输入您想了解的领域...",
             height=120,
             placeholder="例如：最新的深度学习研究进展...",
             value=st.session_state.query,
         )
-
-        # Add some spacing
         st.markdown("<br>", unsafe_allow_html=True)
-
-        # Display suggestion tags in a more organized way
         st.markdown("#### 💡 热门话题")
 
-        tags = [
-            "最新的大语言模型推理算法研究",
-            "多智能体强化学习在无人机控制中的应用",
-            "大语言模型实现数学推理的研究",
-        ]
-
-        # Create a horizontal layout for tags
         cols = st.columns(3)
-        for idx, tag in enumerate(tags):
+        for idx, tag in enumerate(st.session_state.tags):
             with cols[idx]:
                 if st.button(
                     tag, key=f"tag_{tag}", type="secondary", use_container_width=True
@@ -93,24 +80,24 @@ async def show_search_page(agent: ResearchAgent):
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Create a centered search button with custom styling
-    _, middle, _ = st.columns([1, 2, 1])  # Adjusted column ratios for better centering
+    _, middle, _ = st.columns([1, 2, 1])
     with middle:
         search_button = st.button(
             "🔎 开始搜索",
             type="primary",
-            use_container_width=True,  # Make button stretch to container width
+            use_container_width=True,
             key="search_main",
         )
 
     if search_button:
-        # Reset processing state when returning from results page
         st.session_state.processing = False
         if not st.session_state.processing:
             st.session_state.processing = True
             with st.spinner("🔍 正在为您检索相关论文..."):
                 results = await agent._search_arxiv(query)  # 异步搜索
-
+                # 清空之前的结果
+                st.session_state.paper_summaries = {}
+                st.session_state.summary = {}
                 if results:
                     st.session_state.current_page = "results"
                     st.session_state.papers = results["papers"]
@@ -129,10 +116,6 @@ def show_results_page(agent: ResearchAgent):
         """,
         unsafe_allow_html=True,
     )
-
-    if "paper_summaries" not in st.session_state:
-        st.session_state.paper_summaries = {}
-
     # 检索结果
     if st.session_state.papers:
         # 显示检索到的论文
@@ -236,18 +219,12 @@ def generate_summary(agent: ResearchAgent, paper, index: int):
 
 
 async def main():
-    # Load environment variables first
     load_dotenv()
 
     try:
-        # Initialize LLM client and ResearchAgent
         llm = LLM_client("gpt-4o-ca")
         agent = ResearchAgent(llm)
-
-        # Initialize session state
-        init_session_state()
-
-        # Show different pages based on current state
+        init_session_state(agent)
         if st.session_state.current_page == "search":
             await show_search_page(agent)
         elif st.session_state.current_page == "results":

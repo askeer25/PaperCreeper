@@ -17,17 +17,28 @@ class ResearchAgent:
     def __init__(self, llm_client: LLM_client):
         self.llm = llm_client
 
-        self.KEYWORD_PROMPT = """You are an academic search assistant tasked with generating queries to search for relevant papers on arXiv.
-If the user inputs in Chinese, first translate it into English and ensure the translation is professional and accurate.
-The user typically poses a basic question wanting to know more, but the question may not always be clearly articulated.
+        self.TAG_PROMPT = """你是一个博士研究生，请生成一组涉及人工智能、计算机科学、深度学习、航空航天等领域的查询语句.
+        
+例如：
+"最新的大语言模型推理算法研究",
+"多智能体强化学习在无人机控制中的应用",
+"大语言模型实现数学推理的研究",
 
-Given user's input: {query}
+请生成3个查询语句，并按照以下格式返回:
+<tags>["最新的大语言模型推理算法研究, "多智能体强化学习在无人机控制中的应用", ...]</tags>
+"""
 
-Generate a list of search queries:
+        self.KEYWORD_PROMPT = """你是一个学术搜索助手，负责生成用于在arXiv上搜索相关论文的查询。
+如果用户输入是中文，请先将其翻译成英文，并确保翻译专业准确。
+用户通常会提出一个基本问题，想要了解更多信息，但这个问题可能并不总是表述得很清晰。
+
+给定用户输入：{query}
+
+请确保关键词专业准确，字数不超过5个，并按照以下格式返回：
 <queries>["query_1", "query_2", ...]</queries>
 
 """
-        self.SUMMARY_PAPER_PROMPT = """请提供一份详细的论文总结与分析, 使用中文回答：
+        self.SUMMARY_PAPER_PROMPT = """你是一个博士研究生, 请提供一份详细的论文总结与分析, 使用中文回答：
 
 **论文标题**: {paper}  
 **论文摘要**: {abstract}
@@ -49,7 +60,7 @@ Generate a list of search queries:
 
 """
 
-        self.SUMMARY_PROMPT = """作为专业的学术研究助理，您的任务是根据提供的相关分数对一组论文进行全面分析和总结。
+        self.SUMMARY_PROMPT = """你是一个专业的学术研究助理，您的任务是根据提供的相关分数对一组论文进行全面分析和总结。
 
 您需要在分析中涉及以下方面：
 
@@ -93,6 +104,19 @@ Generate a list of search queries:
 请仅提供一个0-10之间的数字评分，不要附加其他文字。
 
 """
+
+    def generate_tags(self) -> List[str]:
+        logging.info("生成查询标签.")
+        messages = [
+            {"role": "system", "content": "You are a Ph.D. student."},
+            {"role": "user", "content": self.TAG_PROMPT},
+        ]
+        response = self.llm.response(messages, temperature=0.4)
+        try:
+            tags = extract(response, "tags")
+            return json.loads(tags)
+        except:
+            return []
 
     def _extract_keywords(self, user_input: str) -> List[str]:
         logging.info("从用户输入中提取关键词.")
