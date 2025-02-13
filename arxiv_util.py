@@ -96,6 +96,8 @@ async def main():
     results = await async_get_arxiv_results(
         query="machine learning",
         max_results=10,
+        start_date=datetime(2022, 1, 1),
+        end_date=datetime(2022, 12, 31),
         categories=["cs.AI", "cs.LG"],
         abstract=True,
     )

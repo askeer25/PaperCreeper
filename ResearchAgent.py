@@ -17,73 +17,76 @@ class ResearchAgent:
     def __init__(self, llm_client: LLM_client):
         self.llm = llm_client
 
-        self.KEYWORD_PROMPT = """You are an academic search assistant, your task is to generate queries to retrieve relevant papers on arxiv.If the user enters Chinese, please translate it into English first and ensure professionalism and accuracy. More often than not, a user will ask a basic question that they wish to learn more about, however it might not be in the best format. 
+        self.KEYWORD_PROMPT = """您是学术搜索助手，您的任务是生成查询以在arxiv上检索相关论文。如果用户输入中文，请首先将其翻译成英文，并确保翻译的专业性和准确性。用户通常提出一个基础问题，想要进一步了解，但问题的表达形式可能并不理想。
 
-User input: {query}
+用户输入：{query}
 
 <queries>["query_1", "query_2", ...]</queries>
 
 """
-        self.SUMMARY_PAPER_PROMPT = """您是一位学术研究助手，请对以下论文提供详细总结与分析。
+        self.SUMMARY_PAPER_PROMPT = """请作为学术研究助手对以下论文提供详细总结与分析。
 
-论文标题: {paper}, 论文摘要: {abstract}
+论文标题: {paper}  
+论文摘要: {abstract}
 
-您的总结应涵盖以下方面：
+您的总结应包括以下几个方面：
 
-1. 主要研究方向与贡献：描述论文的核心研究领域、目标及主要贡献。作者试图解决什么问题？他们采用了何种方法来解决问题？
-2. 创新点与关键发现：突出论文中的新颖方法、技术或研究成果，这些内容如何使该论文区别于其他相关研究？其方法或结果的独特之处在哪里？
-3. 论文间的联系与关系：识别这些论文之间的关联性，例如它们是否探讨了相似的问题、使用了互补的方法，或者在彼此的基础上进行了扩展。是否存在贯穿这些论文的总体趋势或共同主题？
-4. 对广泛领域的相关性：简要讨论这些论文在其各自领域中的意义
+1. **主要研究方向与贡献**  
+   - 描述论文的核心研究领域、目标及主要贡献。  
+   - 作者试图解决什么问题？  
+   - 采用了哪些方法来解决问题？
 
-请使用markdown语法回答问题，只可以使用列表、文本、加粗字体，不要使用其他格式。
-请以中文作答, 并确保您的回答专业准确, 不要超过300字
+2. **创新点与关键发现**  
+   - 突出论文中的新颖方法、技术或研究成果。  
+   - 这些新内容如何使论文区别于其他相关研究？  
+   - 其方法或结果有何独特之处？
+
+请使用**Markdown**语法作答，仅使用列表、文本、加粗字体，避免使用其他格式。  
+请确保您的回答专业准确，字数不超过300字。
+
 """
 
         self.SUMMARY_PROMPT = """您是一位专业的学术研究助手，请根据提供的相关性评分，对这组论文进行全面的分析和总结。
 
-    论文集合: {papers}
-    相关性评分：{scores}
+论文集合: {papers}  
+相关性评分：{scores}
 
-    请从以下几个方面进行整体分析：
+请从以下几个方面进行整体分析：
 
-    1. 研究主题概览
-    - 概括这组论文涉及的主要研究领域和核心主题
-    - 分析研究主题的分布和侧重点
+1. **研究主题概览**  
+   - 概括这组论文涉及的主要研究领域和核心主题。  
+   - 分析研究主题的分布和侧重点。
 
-    2. 研究方法与技术路线
-    - 总结这组论文采用的主要研究方法
-    - 比较不同论文间的技术路线异同
-    - 分析方法论的演进趋势
+2. **研究方法与技术路线**  
+   - 总结这组论文采用的主要研究方法。  
+   - 比较不同论文间的技术路线异同。  
+   - 分析方法论的演进趋势。
 
-    3. 关键发现与贡献
-    - 提炼最重要的研究发现和突破
-    - 评估各项发现的创新性和影响力
-    - 根据相关性评分分析研究成果的重要程度
+3. **关键发现与贡献**  
+   - 提炼最重要的研究发现和突破。  
+   - 评估各项发现的创新性和影响力。  
+   - 根据相关性评分分析研究成果的重要程度。
 
-    4. 研究脉络与趋势
-    - 分析论文之间的承接关系和演进路径
-    - 识别该领域的发展趋势和未来方向
-    - 指出潜在的研究空白和机会
+4. **研究脉络与趋势**  
+   - 分析论文之间的承接关系和演进路径。  
+   - 识别该领域的发展趋势和未来方向。  
+   - 指出潜在的研究空白和机会。
 
-    请使用简洁专业的语言，确保分析客观全面，突出重点发现。
-    总结长度控制在600字以内。结尾请附上论文的ArXiv链接。
+请使用简洁专业的语言，确保分析客观全面，突出重点发现。  
+总结长度控制在600字以内。
+
     """
 
-        self.RERANK_PROPMT = """
-You are an academic relevance scorer that rates papers on a scale from 0-10 based on relevance to user interest. 
+        self.RERANK_PROPMT = """你是一个学术相关性评分员，根据用户兴趣对论文的相关性进行评分，评分范围为0-10。
 
-User input:
-{input}
+用户输入： {input}
 
-Consider this paper:
-{paper_info}
+请考虑以下论文： {paper_info}
 
-Rate how relevant this paper is on a scale of 0-10, where:
-0 = Not relevant at all
-5 = Moderately relevant 
-10 = Extremely relevant
+请根据以下标准给出该论文的相关性评分（0-10）： 0 = 完全不相关 5 = 中等相关 10 = 极其相关
 
-Provide ONLY a single number score between 0-10 with no other text.
+请仅提供一个0-10之间的数字评分，不要附加其他文字。
+
 """
 
     def _extract_keywords(self, user_input: str) -> List[str]:

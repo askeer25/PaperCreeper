@@ -120,87 +120,95 @@ def show_results_page(agent: ResearchAgent):
         unsafe_allow_html=True,
     )
 
-    # 重置summary
-    st.session_state.paper_summaries = {}
+    # 初始化paper_summaries（如果不存在）
+    if "paper_summaries" not in st.session_state:
+        st.session_state.paper_summaries = {}
 
     # 检索结果
     if st.session_state.papers:
         # 显示检索到的论文
         for i, paper in enumerate(st.session_state.papers):
             with st.container():
+                # 使用更现代的卡片样式
                 st.markdown(
                     f"""
-                    <div style='background-color: #F8F9F9; padding: 20px; border-radius: 10px; margin: 10px 0;'>
-                    <h3 style='color: #2E4053;'>{i+1}. {paper.title}</h3>
+                    <div style='background-color: #FFFFFF; 
+                              padding: 25px; 
+                              border-radius: 15px; 
+                              margin: 15px 0;
+                              box-shadow: 0 2px 5px rgba(0,0,0,0.1);'>
+                    <h3 style='color: #2E4053; margin-bottom: 15px;'>{i+1}. {paper.title}</h3>
                     """,
                     unsafe_allow_html=True,
                 )
 
-                # Calculate stars (5 stars maximum for score of 10)
-                star_count = round((st.session_state.scores[i] / 10) * 5)
+                # 优化相关度显示
+                score = st.session_state.scores[i]
+                star_count = min(5, max(1, round((score / 10) * 5)))
                 stars = "⭐" * star_count
 
-                col1, col2 = st.columns([3, 1])
+                # 改进列布局
+                col1, col2, col3 = st.columns([2, 2, 1])
                 with col1:
                     st.markdown(f"**相关度:** {stars}")
-                    st.markdown(
-                        f"**作者:** {', '.join([author.name for author in paper.authors])}"
-                    )
-                    st.markdown(f"**发布日期:** {paper.published.year}")
-
+                    st.markdown(f"**发布日期:** {paper.published.strftime('%Y-%m-%d')}")
                 with col2:
-                    # 为每篇论文添加总结按钮
-                    if st.button(
-                        f"🤖 AI总结", key=f"summary_button_{i}", type="primary"
-                    ):
-                        with st.spinner("正在总结论文..."):
-                            summary = agent._summarize_paper(paper)
-                            st.session_state.paper_summaries[i] = summary
-
-                # Create an expandable section for abstract
-                with st.expander("📄 查看摘要"):
-                    st.markdown(f"{paper.summary}")
-
-                # Style the link with a button-like appearance
-                st.markdown(
-                    f"""
-                    <a href="{paper.entry_id}" target="_blank" 
-                       style="text-decoration: none; 
-                              background-color: #3498DB; 
-                              color: white; 
-                              padding: 8px 15px; 
-                              border-radius: 5px; 
-                              font-size: 14px;">
-                        📎 查看原文
-                    </a>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                # Display AI summary in a nicer card if available
-                if i in st.session_state.paper_summaries:
+                    authors = [author.name for author in paper.authors]
                     st.markdown(
-                        """
-                        <div style='background-color: #E8F6F3; 
-                                  padding: 20px; 
-                                  border-radius: 10px; 
-                                  margin: 15px 0;
-                                  border: 1px solid #A3E4D7;
-                                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                        <h4 style='color: #117A65; margin-bottom: 10px;'>
-                            🤖 AI 智能解读
-                        </h4>
+                        f"**作者:** {', '.join(authors[:3])}{'...' if len(authors) > 3 else ''}"
+                    )
+                with col3:
+                    # 操作按钮垂直排列
+                    st.button(
+                        "🤖 AI总结",
+                        key=f"summary_button_{i}",
+                        type="primary",
+                        use_container_width=True,
+                        on_click=lambda paper=paper, i=i: generate_summary(
+                            agent, paper, i
+                        ),
+                    )
+
+                    st.markdown(
+                        f"""
+                        <a href="{paper.entry_id}" target="_blank" 
+                           style="text-decoration: none; 
+                                  background-color: #3498DB; 
+                                  color: white; 
+                                  padding: 8px 15px; 
+                                  border-radius: 5px; 
+                                  width: 100%;
+                                  text-align: center;
+                                  display: inline-block;
+                                  margin-top: 5px;">
+                            📎 查看原文
+                        </a>
                         """,
                         unsafe_allow_html=True,
                     )
-                    st.markdown(st.session_state.paper_summaries[i])
-                    st.markdown("</div>", unsafe_allow_html=True)
+
+                # 改进摘要显示
+                with st.expander("📄 查看摘要", expanded=False):
+                    st.markdown(f"{paper.summary}")
+
+                # 显示AI总结（如果有）
+                if i in st.session_state.paper_summaries:
+                    with st.expander("🤖 AI智能解读", expanded=True):
+                        st.markdown(st.session_state.paper_summaries[i])
 
                 st.markdown("</div>", unsafe_allow_html=True)
 
-        # 创建三列布局
-        _, middle, _ = st.columns([1, 2, 1])
-        with middle:
+        # 底部控制区
+        st.markdown("<br>", unsafe_allow_html=True)
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            if st.button("← 返回搜索", type="secondary", use_container_width=True):
+                st.session_state.current_page = "search"
+                st.session_state.search_completed = False
+                st.rerun()
+
+        with col2:
             if st.button(
                 "✨ 生成整体总结",
                 key="global_summary",
@@ -208,41 +216,32 @@ def show_results_page(agent: ResearchAgent):
                 use_container_width=True,
             ):
                 with st.spinner("🎯 正在生成研究领域的整体分析..."):
-                    summary = agent._summarize_papers(
+                    st.session_state.summary = agent._summarize_papers(
                         st.session_state.papers, st.session_state.scores
                     )
-                    st.session_state.summary = summary
 
-        # 显示总结内容，使用更优雅的卡片设计
+        # 显示整体总结
         if st.session_state.summary:
-            # st.markdown(
-            #     """
-            # <div style='background-color: #E8F6F3;
-            #       padding: 25px;
-            #       border-radius: 15px;
-            #       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            #       margin: 20px 0;
-            #       border: 1px solid #A3E4D7;'>
-            #     <h3 style='color: #117A65;
-            #          margin-bottom: 20px;
-            #          border-bottom: 2px solid #A3E4D7;
-            #          padding-bottom: 10px;'>
-            #     📊 研究领域综述
-            #     </h3>
-            # """,
-            #     unsafe_allow_html=True,
-            # )
+            st.markdown(
+                """
+                <div style='background-color: #F7F9FA; 
+                          padding: 20px; 
+                          border-radius: 10px; 
+                          margin-top: 20px;
+                          border-left: 5px solid #3498DB;'>
+                """,
+                unsafe_allow_html=True,
+            )
             st.markdown(st.session_state.summary)
-            st.markdown("</div></div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        # 优化返回按钮的样式和位置
-        st.markdown("<br>", unsafe_allow_html=True)
-        left_col, _, _ = st.columns([1, 1, 1])
-        with left_col:
-            if st.button("← 返回搜索", type="secondary", use_container_width=True):
-                st.session_state.current_page = "search"
-                st.session_state.search_completed = False
-                st.rerun()
+
+def generate_summary(agent: ResearchAgent, paper, index: int):
+    """生成单篇论文的摘要"""
+    if index not in st.session_state.paper_summaries:
+        with st.spinner("正在总结论文..."):
+            summary = agent._summarize_paper(paper)
+            st.session_state.paper_summaries[index] = summary
 
 
 async def main():
