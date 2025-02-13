@@ -194,20 +194,24 @@ def show_results_page(agent: ResearchAgent):
                 st.rerun()
 
         with col2:
-            if st.button(
+            st.button(
                 "✨ 生成整体总结",
                 key="global_summary",
                 type="primary",
                 use_container_width=True,
-            ):
-                with st.spinner("🎯 正在生成研究领域的整体分析..."):
-                    st.session_state.summary = agent._summarize_papers(
-                        st.session_state.papers, st.session_state.scores
-                    )
+                on_click=lambda: st.session_state.update(
+                    {
+                        "summary": agent._summarize_papers(
+                            st.session_state.papers, st.session_state.scores
+                        )
+                    }
+                ),
+            )
 
         # 显示整体总结
         if st.session_state.summary:
-            st.markdown(st.session_state.summary)
+            with st.expander("🎯 整体分析", expanded=True):
+                st.markdown(st.session_state.summary)
 
 
 def generate_summary(agent: ResearchAgent, paper, index: int):
