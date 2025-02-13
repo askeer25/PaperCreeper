@@ -168,7 +168,7 @@ class ResearchAgent:
         sorted_scores = deduped_scores
         return sorted_results, sorted_scores
 
-    async def _search_arxiv(self, user_input: str, max_results: int = 3):
+    async def _search_arxiv(self, user_input: str, max_results: int = 2):
         keywords = self._extract_keywords(user_input)
         logging.info("关键词: %s", keywords)
 

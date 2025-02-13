@@ -1,4 +1,5 @@
 import os
+import tiktoken
 from openai import OpenAI, AsyncOpenAI
 
 
@@ -41,7 +42,19 @@ class LLM_client:
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.async_client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
 
+        self.total_tokens = 0
+
+    def count_tokens(self, messages):
+        total = 0
+        for message in messages:
+            if isinstance(message, dict):
+                content = message.get("content", "")
+                total += len(content) // 4  # Rough estimation: ~4 characters per token
+        self.total_tokens += total
+        return total
+
     def response(self, messages, **kwargs):
+        input_tokens = self.count_tokens(messages)
         try:
             response = self.client.chat.completions.create(
                 model=kwargs.get("model", self.model),
@@ -51,6 +64,7 @@ class LLM_client:
                 max_tokens=kwargs.get("max_tokens", 4000),
                 timeout=kwargs.get("timeout", 180),
             )
+
         except Exception as e:
             model = kwargs.get("model", self.model)
             print(f"get {model} response failed: {e}")
