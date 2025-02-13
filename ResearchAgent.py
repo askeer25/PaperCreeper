@@ -34,7 +34,7 @@ class ResearchAgent:
 
 给定用户输入：{query}
 
-请确保关键词专业准确，字数不超过5个，并按照以下格式返回：
+请确保关键词专业准确，个数为3-5个，并按照以下格式返回：
 <queries>["query_1", "query_2", ...]</queries>
 
 """
@@ -168,7 +168,7 @@ class ResearchAgent:
         sorted_scores = deduped_scores
         return sorted_results, sorted_scores
 
-    async def _search_arxiv(self, user_input: str, max_results: int = 1):
+    async def _search_arxiv(self, user_input: str, max_results: int = 3):
         keywords = self._extract_keywords(user_input)
         logging.info("关键词: %s", keywords)
 
