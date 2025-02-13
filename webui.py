@@ -237,7 +237,7 @@ def show_results_page(agent: ResearchAgent):
 
 
 def generate_summary(agent: ResearchAgent, paper, index: int):
-    """生成单篇论文的摘要"""
+    """生成单篇论文的摘要."""
     if index not in st.session_state.paper_summaries:
         with st.spinner("正在总结论文..."):
             summary = agent._summarize_paper(paper)
