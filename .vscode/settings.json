@@ -1,7 +1,0 @@
-{
-    "marscode.codeCompletionPro": {
-        "enableCodeCompletionPro": false
-    },
-    "marscode.enableInlineCommand": true,
-    "python.REPL.enableREPLSmartSend": false
-}
